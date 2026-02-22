@@ -1,0 +1,51 @@
+podcast_id,podcast_name,category,language,launch_date
+1,Podcast_1,Health,Hindi,2022-06-05
+2,Podcast_2,Comedy,Hindi,2024-02-27
+3,Podcast_3,True Crime,Hindi,2022-10-10
+4,Podcast_4,Comedy,English,2023-12-23
+5,Podcast_5,Comedy,Hindi,2024-03-08
+6,Podcast_6,Technology,English,2022-08-16
+7,Podcast_7,True Crime,Hindi,2022-01-27
+8,Podcast_8,True Crime,Spanish,2022-02-23
+9,Podcast_9,True Crime,Spanish,2021-10-16
+10,Podcast_10,Comedy,English,2022-01-14
+11,Podcast_11,Health,Spanish,2021-08-19
+12,Podcast_12,True Crime,Spanish,2023-10-15
+13,Podcast_13,Education,Hindi,2021-02-10
+14,Podcast_14,Comedy,English,2023-11-18
+15,Podcast_15,Technology,Hindi,2021-05-15
+16,Podcast_16,Health,Hindi,2021-07-20
+17,Podcast_17,Education,Hindi,2023-02-19
+18,Podcast_18,Education,Hindi,2023-07-19
+19,Podcast_19,Technology,Hindi,2023-11-23
+20,Podcast_20,Health,Hindi,2023-12-08
+21,Podcast_21,Comedy,Hindi,2022-05-18
+22,Podcast_22,Business,English,2022-02-11
+23,Podcast_23,Health,Spanish,2023-03-16
+24,Podcast_24,Technology,Hindi,2021-04-09
+25,Podcast_25,Education,Hindi,2022-11-15
+26,Podcast_26,Comedy,Hindi,2022-12-27
+27,Podcast_27,Health,Hindi,2023-08-19
+28,Podcast_28,Business,Hindi,2022-09-05
+29,Podcast_29,Business,Hindi,2022-10-05
+30,Podcast_30,True Crime,Spanish,2023-10-26
+31,Podcast_31,True Crime,Spanish,2022-05-18
+32,Podcast_32,Technology,Hindi,2023-02-06
+33,Podcast_33,Health,Spanish,2022-02-02
+34,Podcast_34,Health,English,2023-05-21
+35,Podcast_35,Education,Hindi,2023-03-06
+36,Podcast_36,Education,English,2022-01-28
+37,Podcast_37,Education,English,2021-07-26
+38,Podcast_38,True Crime,Hindi,2023-11-05
+39,Podcast_39,Health,Spanish,2023-06-11
+40,Podcast_40,Health,English,2023-05-14
+41,Podcast_41,Business,Hindi,2023-01-13
+42,Podcast_42,True Crime,English,2022-07-18
+43,Podcast_43,Comedy,English,2023-10-18
+44,Podcast_44,True Crime,English,2021-04-06
+45,Podcast_45,Comedy,English,2022-04-30
+46,Podcast_46,Business,Spanish,2021-08-19
+47,Podcast_47,Technology,English,2023-01-19
+48,Podcast_48,Health,English,2024-04-09
+49,Podcast_49,Business,English,2022-06-25
+50,Podcast_50,Health,Spanish,2023-11-26
