@@ -1,46 +1,83 @@
 import streamlit as st
 from database import run_query
 
-def ai_page():
+BUSINESS_QUERIES={
 
-    st.title("AI Analytics Assistant")
+"top revenue category":"""
 
-    question=st.text_input(
+SELECT p.category,
+SUM(r.revenue_generated) revenue
 
-"Ask Business Question"
+FROM revenue r
+JOIN episodes e
+ON r.episode_id=e.episode_id
+JOIN podcasts p
+ON e.podcast_id=p.podcast_id
 
-)
+GROUP BY p.category
+ORDER BY revenue DESC
+LIMIT 1
 
-    if question:
+""",
 
-        if "revenue" in question.lower():
+"platform usage":"""
 
-            query="""
-
-SELECT SUM(revenue_generated)
-
-FROM revenue
-
-"""
-
-        elif "platform" in question.lower():
-
-            query="""
-
-SELECT platform,COUNT(*) listens
+SELECT platform,
+COUNT(*) listens
 
 FROM sessions
 
 GROUP BY platform
 
+""",
+
+"listener count":"""
+
+SELECT COUNT(DISTINCT listener_id)
+AS listeners
+
+FROM sessions
+
 """
 
-        else:
+}
 
-            st.write("Try asking about revenue or platform usage")
+def ai_page():
 
-            return
+    st.title("AI Strategy Assistant")
 
-        df=run_query(query)
+    st.write(
 
-        st.dataframe(df)
+    "Ask Business Questions."
+
+    )
+
+    q=st.text_input(
+
+    "Example: top revenue category"
+
+    )
+
+    if q:
+
+        q=q.lower()
+
+        for key in BUSINESS_QUERIES:
+
+            if key in q:
+
+                df=run_query(
+
+                BUSINESS_QUERIES[key]
+
+                )
+
+                st.dataframe(df)
+
+                return
+
+        st.warning(
+
+        "Try: top revenue category / platform usage / listener count"
+
+        )
