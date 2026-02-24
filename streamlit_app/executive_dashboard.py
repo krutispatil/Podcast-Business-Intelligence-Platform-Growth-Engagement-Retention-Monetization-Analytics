@@ -1,22 +1,19 @@
 import streamlit as st
 from database import run_query
 import plotly.express as px
-import pandas as pd
-
 
 def executive_page():
 
-    st.title("Podcast Executive Intelligence")
+    st.title("Executive Podcast Intelligence")
 
-    # ---------- KPI SECTION ----------
+# ---------------- KPI HEALTH ----------------
 
     kpi_query="""
 
 SELECT
 
 COUNT(DISTINCT listener_id) listeners,
-COUNT(DISTINCT episode_id) episodes,
-SUM(listen_minutes) total_minutes
+SUM(listen_minutes) minutes
 
 FROM sessions;
 
@@ -24,7 +21,7 @@ FROM sessions;
 
     kpis=run_query(kpi_query)
 
-    col1,col2,col3=st.columns(3)
+    col1,col2=st.columns(2)
 
     col1.metric(
 
@@ -36,83 +33,75 @@ FROM sessions;
 
     col2.metric(
 
-    "Episodes Streamed",
-
-    int(kpis.episodes.iloc[0])
-
-    )
-
-    col3.metric(
-
     "Listening Minutes",
 
-    int(kpis.total_minutes.iloc[0])
+    int(kpis.minutes.iloc[0])
 
     )
 
     st.divider()
 
-    # ---------- Revenue by Category ----------
+# ---------------- TREND ANALYSIS ----------------
 
-    revenue_query=open(
+    trend_query="""
 
-    "sql_queries/revenue_by_category.sql"
+SELECT
 
-    ).read()
+strftime('%Y-%m',listen_start_time) month,
 
-    revenue_df=run_query(revenue_query)
-
-    fig1=px.bar(
-
-    revenue_df,
-
-    x="category",
-
-    y="total_revenue",
-
-    title="Revenue Contribution by Podcast Category"
-
-    )
-
-    st.plotly_chart(fig1,use_container_width=True)
-
-    # ---------- Platform Usage ----------
-
-    platform_query="""
-
-SELECT platform,COUNT(*) listens
+SUM(listen_minutes) minutes
 
 FROM sessions
 
-GROUP BY platform
+GROUP BY month
+ORDER BY month
 
 """
 
-    platform_df=run_query(platform_query)
+    trend=run_query(trend_query)
 
-    fig2=px.pie(
+    fig=px.line(
 
-    platform_df,
+    trend,
 
-    names="platform",
+    x="month",
 
-    values="listens",
+    y="minutes",
 
-    title="Platform Listening Share"
+    title="Listening Trend"
 
     )
 
-    st.plotly_chart(fig2,use_container_width=True)
+    st.plotly_chart(fig,use_container_width=True)
 
-    # ---------- Completion Analysis ----------
+# Detect Drop
 
-    completion_query="""
+    trend["change"]=trend.minutes.diff()
+
+    drop_month=trend.loc[
+
+    trend.change.idxmin()
+
+    ]
+
+# ---------------- DIAGNOSTIC ----------------
+
+    st.header("Diagnostic Analysis")
+
+    st.write(
+
+    f"Performance dropped most during {drop_month.month}"
+
+    )
+
+# Category
+
+    category_query="""
 
 SELECT
 
 p.category,
-
-AVG(s.completion_percent) avg_completion
+SUM(s.listen_minutes) minutes
 
 FROM sessions s
 
@@ -128,28 +117,94 @@ GROUP BY p.category
 
 """
 
-    completion_df=run_query(completion_query)
+    cat=run_query(category_query)
 
-    fig3=px.bar(
+    fig2=px.bar(
 
-    completion_df,
+    cat,
 
     x="category",
 
-    y="avg_completion",
+    y="minutes",
 
-    title="Average Completion Rate"
+    title="Category Engagement"
+
+    )
+
+    st.plotly_chart(fig2,use_container_width=True)
+
+# Geography
+
+    geo_query="""
+
+SELECT
+
+l.country,
+
+SUM(s.listen_minutes) minutes
+
+FROM sessions s
+
+JOIN listeners l
+
+ON s.listener_id=l.listener_id
+
+GROUP BY l.country
+
+"""
+
+    geo=run_query(geo_query)
+
+    fig3=px.bar(
+
+    geo,
+
+    x="country",
+
+    y="minutes",
+
+    title="Country Engagement"
 
     )
 
     st.plotly_chart(fig3,use_container_width=True)
 
-    # ---------- Executive Insight ----------
+# Root Cause
 
-    top=revenue_df.iloc[0]
+    worst_country=geo.sort_values(
+
+    "minutes"
+
+    ).iloc[0]
+
+    worst_category=cat.sort_values(
+
+    "minutes"
+
+    ).iloc[0]
+
+    st.error(
+
+f"""Root Cause:
+
+Low engagement from {worst_country.country}
+and declining {worst_category.category} podcasts.
+
+"""
+
+)
+
+# Recommendation
 
     st.success(
 
-    f"Top Revenue Category : {top.category}"
+f"""
 
-    )
+Recommendation:
+
+Increase promotion in {worst_country.country}.
+Invest in improving {worst_category.category} content.
+
+"""
+
+)
