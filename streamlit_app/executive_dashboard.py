@@ -1,13 +1,12 @@
 import streamlit as st
 from database import run_query
 import plotly.express as px
-import pandas as pd
 
 def executive_page():
 
-    st.title("Executive Intelligence Platform")
+    st.title("Executive Podcast Intelligence")
 
-# ================= KPI HEALTH =================
+# ---------------- KPI HEALTH ----------------
 
     kpi_query="""
 
@@ -41,10 +40,8 @@ FROM sessions;
     )
 
     st.divider()
-    if st.button("Why Did Performance Change?"):
-        st.write("Running Multi-Factor Analysis...")
 
-# ================= TREND =================
+# ---------------- TREND ----------------
 
     trend_query="""
 
@@ -77,23 +74,11 @@ ORDER BY month
 
     st.plotly_chart(fig,use_container_width=True)
 
-# Detect worst month
-
     trend["change"]=trend.minutes.diff()
 
     drop_month=trend.loc[trend.change.idxmin()].month
 
-    st.warning(
-
-    f"Performance drop detected in {drop_month}"
-
-    )
-
-# ================= AUTO ROOT CAUSE =================
-
-    st.header("AI Root Cause Diagnostics")
-
-# Category
+# ---------------- CATEGORY ----------------
 
     cat_query="""
 
@@ -117,7 +102,25 @@ GROUP BY p.category
 
     cat=run_query(cat_query)
 
-# Geography
+    st.plotly_chart(
+
+    px.bar(
+
+    cat,
+
+    x="category",
+
+    y="minutes",
+
+    title="Category Engagement"
+
+    ),
+
+    use_container_width=True
+
+    )
+
+# ---------------- COUNTRY ----------------
 
     geo_query="""
 
@@ -137,56 +140,17 @@ GROUP BY l.country
 
     geo=run_query(geo_query)
 
-# Platform
-
-    platform_query="""
-
-SELECT
-
-platform,
-COUNT(*) listens
-
-FROM sessions
-
-GROUP BY platform
-
-"""
-
-    plat=run_query(platform_query)
-
-# Visuals
-
-    colA,colB=st.columns(2)
-
-    colA.plotly_chart(
-
-    px.bar(cat,x="category",y="minutes",
-    title="Category Engagement"),
-
-    use_container_width=True
-
-    )
-
-    colB.plotly_chart(
-
-    px.bar(geo,x="country",y="minutes",
-    title="Country Engagement"),
-
-    use_container_width=True
-
-    )
-
     st.plotly_chart(
 
-    px.pie(
+    px.bar(
 
-    plat,
+    geo,
 
-    names="platform",
+    x="country",
 
-    values="listens",
+    y="minutes",
 
-    title="Platform Share"
+    title="Country Engagement"
 
     ),
 
@@ -194,7 +158,7 @@ GROUP BY platform
 
     )
 
-# Root Cause Logic
+# ---------------- ROOT CAUSE ----------------
 
     worst_country=geo.sort_values(
 
@@ -208,23 +172,25 @@ GROUP BY platform
 
     ).iloc[0]
 
-# ================= STORY =================
+# ---------------- EXECUTIVE SUMMARY ----------------
+
+    st.header("Executive Summary")
 
     st.error(
 
 f"""
 
-Root Cause Summary:
+Performance decline detected in {drop_month}.
 
-Lowest engagement detected in {worst_country.country}.
+Root Cause:
 
-Category decline observed in {worst_category.category} podcasts.
+Lowest engagement from {worst_country.country}.
+
+Decline in {worst_category.category} podcast performance.
 
 """
 
 )
-
-# ================= ACTION =================
 
     st.success(
 
@@ -232,44 +198,57 @@ f"""
 
 Recommended Actions:
 
-Increase marketing spend in {worst_country.country}.
+Increase localized marketing in {worst_country.country}.
 
-Invest in improving {worst_category.category} podcast production.
+Invest in improving {worst_category.category} podcast quality.
 
-Test shorter episode formats.
+Experiment with shorter episode formats.
 
 """
 
 )
 
-# ================= BUSINESS QUESTIONS =================
+# ---------------- BUSINESS QUESTIONS ----------------
 
     st.header("Executive Business Questions")
 
-    questions={
+# Revenue Category
 
-"Top Revenue Category":
-
-"""
+    revenue_query="""
 
 SELECT p.category,
 SUM(r.revenue_generated) revenue
 
 FROM revenue r
 JOIN episodes e
+
 ON r.episode_id=e.episode_id
+
 JOIN podcasts p
+
 ON e.podcast_id=p.podcast_id
 
 GROUP BY p.category
 ORDER BY revenue DESC
 LIMIT 1
 
-""",
-
-"Most Used Platform":
-
 """
+
+    st.subheader(
+
+"Which Category Drives Revenue?"
+
+)
+
+    st.dataframe(
+
+    run_query(revenue_query)
+
+    )
+
+# Platform
+
+    platform_query="""
 
 SELECT platform,
 COUNT(*) listens
@@ -278,16 +257,17 @@ FROM sessions
 
 GROUP BY platform
 ORDER BY listens DESC
-LIMIT 1
 
 """
 
-}
+    st.subheader(
 
-    for q,sql in questions.items():
+"Most Used Platform?"
 
-        st.subheader(q)
+)
 
-        df=run_query(sql)
+    st.dataframe(
 
-        st.dataframe(df)
+    run_query(platform_query)
+
+    )
