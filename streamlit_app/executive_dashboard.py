@@ -41,6 +41,8 @@ FROM sessions;
     )
 
     st.divider()
+    if st.button("Why Did Performance Change?"):
+        st.write("Running Multi-Factor Analysis...")
 
 # ================= TREND =================
 
