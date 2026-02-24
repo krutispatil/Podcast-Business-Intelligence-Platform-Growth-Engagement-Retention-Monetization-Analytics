@@ -1,26 +1,52 @@
 import streamlit as st
 from database import run_query
 
-BUSINESS_QUERIES={
+def ai_page():
 
-"top revenue category":"""
+    st.title("AI Strategy Assistant")
 
-SELECT p.category,
-SUM(r.revenue_generated) revenue
+    st.write(
 
-FROM revenue r
-JOIN episodes e
-ON r.episode_id=e.episode_id
-JOIN podcasts p
-ON e.podcast_id=p.podcast_id
+"Ask questions like:\n"
+"Which country performs worst?\n"
+"Top revenue category?"
 
-GROUP BY p.category
-ORDER BY revenue DESC
-LIMIT 1
+)
 
-""",
+    question=st.text_input("Ask")
 
-"platform usage":"""
+    if question:
+
+        question=question.lower()
+
+        if "country" in question:
+
+            sql="""
+
+SELECT country,
+COUNT(*) listens
+
+FROM listeners l
+JOIN sessions s
+
+ON l.listener_id=s.listener_id
+
+GROUP BY country
+ORDER BY listens DESC
+
+"""
+
+        elif "revenue" in question:
+
+            sql=open(
+
+"sql_queries/revenue_by_category.sql"
+
+).read()
+
+        elif "platform" in question:
+
+            sql="""
 
 SELECT platform,
 COUNT(*) listens
@@ -29,55 +55,14 @@ FROM sessions
 
 GROUP BY platform
 
-""",
-
-"listener count":"""
-
-SELECT COUNT(DISTINCT listener_id)
-AS listeners
-
-FROM sessions
-
 """
 
-}
+        else:
 
-def ai_page():
+            st.warning("Try another business question")
 
-    st.title("AI Strategy Assistant")
+            return
 
-    st.write(
+        df=run_query(sql)
 
-    "Ask Business Questions."
-
-    )
-
-    q=st.text_input(
-
-    "Example: top revenue category"
-
-    )
-
-    if q:
-
-        q=q.lower()
-
-        for key in BUSINESS_QUERIES:
-
-            if key in q:
-
-                df=run_query(
-
-                BUSINESS_QUERIES[key]
-
-                )
-
-                st.dataframe(df)
-
-                return
-
-        st.warning(
-
-        "Try: top revenue category / platform usage / listener count"
-
-        )
+        st.dataframe(df)
