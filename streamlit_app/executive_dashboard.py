@@ -1,27 +1,62 @@
 import streamlit as st
 from database import run_query
 import plotly.express as px
+import pandas as pd
 
 def executive_page():
 
-    st.title("Executive Podcast Intelligence")
+    st.title("Podcast Executive Command Center")
 
-# ---------------- KPI HEALTH ----------------
+# ================= GLOBAL FILTERS =================
 
-    kpi_query="""
+    countries=run_query(
+
+    "SELECT DISTINCT country FROM listeners"
+
+    )
+
+    selected_country=st.sidebar.selectbox(
+
+    "Country Filter",
+
+    ["All"]+countries.country.tolist()
+
+    )
+
+    country_filter=""
+
+    if selected_country!="All":
+
+        country_filter=f"""
+
+JOIN listeners l
+ON s.listener_id=l.listener_id
+
+WHERE l.country='{selected_country}'
+
+"""
+
+# ================= KPI SECTION =================
+
+    kpi_query=f"""
 
 SELECT
 
-COUNT(DISTINCT listener_id) listeners,
-SUM(listen_minutes) minutes
+COUNT(DISTINCT s.listener_id) listeners,
 
-FROM sessions;
+SUM(s.listen_minutes) minutes,
+
+AVG(s.completion_percent) completion
+
+FROM sessions s
+
+{country_filter}
 
 """
 
     kpis=run_query(kpi_query)
 
-    col1,col2=st.columns(2)
+    col1,col2,col3=st.columns(3)
 
     col1.metric(
 
@@ -39,11 +74,39 @@ FROM sessions;
 
     )
 
+    col3.metric(
+
+    "Avg Completion",
+
+    round(kpis.completion.iloc[0],2)
+
+    )
+
+# -------- Revenue KPI --------
+
+    revenue_query="""
+
+SELECT SUM(revenue_generated) revenue
+
+FROM revenue
+
+"""
+
+    revenue=run_query(revenue_query)
+
+    st.metric(
+
+    "Total Revenue",
+
+    int(revenue.revenue.iloc[0])
+
+    )
+
     st.divider()
 
-# ---------------- TREND ----------------
+# ================= TREND =================
 
-    trend_query="""
+    trend_query=f"""
 
 SELECT
 
@@ -51,16 +114,21 @@ strftime('%Y-%m',listen_start_time) month,
 
 SUM(listen_minutes) minutes
 
-FROM sessions
+FROM sessions s
+
+{country_filter}
 
 GROUP BY month
+
 ORDER BY month
 
 """
 
     trend=run_query(trend_query)
 
-    fig=px.line(
+    st.plotly_chart(
+
+    px.line(
 
     trend,
 
@@ -68,17 +136,21 @@ ORDER BY month
 
     y="minutes",
 
-    title="Monthly Engagement Trend"
+    title="Listening Trend"
+
+    ),
+
+    use_container_width=True
 
     )
-
-    st.plotly_chart(fig,use_container_width=True)
 
     trend["change"]=trend.minutes.diff()
 
     drop_month=trend.loc[trend.change.idxmin()].month
 
-# ---------------- CATEGORY ----------------
+# ================= CATEGORY DRILLDOWN =================
+
+    st.header("Category Analysis")
 
     cat_query="""
 
@@ -102,25 +174,23 @@ GROUP BY p.category
 
     cat=run_query(cat_query)
 
+    selected_category=st.selectbox(
+
+"Drilldown Category",
+
+cat.category.tolist()
+
+)
+
     st.plotly_chart(
 
-    px.bar(
-
-    cat,
-
-    x="category",
-
-    y="minutes",
-
-    title="Category Engagement"
-
-    ),
+    px.bar(cat,x="category",y="minutes"),
 
     use_container_width=True
 
     )
 
-# ---------------- COUNTRY ----------------
+# ================= COUNTRY =================
 
     geo_query="""
 
@@ -158,7 +228,7 @@ GROUP BY l.country
 
     )
 
-# ---------------- ROOT CAUSE ----------------
+# ================= ROOT CAUSE =================
 
     worst_country=geo.sort_values(
 
@@ -172,49 +242,41 @@ GROUP BY l.country
 
     ).iloc[0]
 
-# ---------------- EXECUTIVE SUMMARY ----------------
+# ================= STORY =================
 
-    st.header("Executive Summary")
+    st.header("Executive Narrative")
 
-    st.error(
+    story=f"""
 
-f"""
+Performance decline observed in {drop_month}.
 
-Performance decline detected in {drop_month}.
+Primary Drivers:
 
-Root Cause:
+Low engagement from {worst_country.country}.
 
-Lowest engagement from {worst_country.country}.
+Decline in {worst_category.category} category.
 
-Decline in {worst_category.category} podcast performance.
+Recommendations:
 
-"""
+Increase targeted marketing.
 
-)
+Introduce expert guest episodes.
 
-    st.success(
-
-f"""
-
-Recommended Actions:
-
-Increase localized marketing in {worst_country.country}.
-
-Invest in improving {worst_category.category} podcast quality.
-
-Experiment with shorter episode formats.
+Experiment shorter formats.
 
 """
 
-)
+    st.info(story)
 
-# ---------------- BUSINESS QUESTIONS ----------------
+# ================= BUSINESS QUESTIONS =================
 
-    st.header("Executive Business Questions")
+    st.header("Executive Questions")
 
-# Revenue Category
+    questions={
 
-    revenue_query="""
+"Top Revenue Category":
+
+"""
 
 SELECT p.category,
 SUM(r.revenue_generated) revenue
@@ -232,42 +294,25 @@ GROUP BY p.category
 ORDER BY revenue DESC
 LIMIT 1
 
-"""
+""",
 
-    st.subheader(
-
-"Which Category Drives Revenue?"
-
-)
-
-    st.dataframe(
-
-    run_query(revenue_query)
-
-    )
-
-# Platform
-
-    platform_query="""
-
-SELECT platform,
-COUNT(*) listens
-
-FROM sessions
-
-GROUP BY platform
-ORDER BY listens DESC
+"Premium Users":
 
 """
 
-    st.subheader(
+SELECT subscription_type,
+COUNT(*)
 
-"Most Used Platform?"
+FROM listeners
 
-)
+GROUP BY subscription_type
 
-    st.dataframe(
+"""
 
-    run_query(platform_query)
+}
 
-    )
+    for q,sql in questions.items():
+
+        st.subheader(q)
+
+        st.dataframe(run_query(sql))
